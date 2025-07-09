@@ -1,0 +1,106 @@
+App As appinfo:
+  AppVersion: 2.1.0
+  BackgroundImage: ""
+  CanvasAppVersion: "3.25023"
+  DataSources: []
+  DocumentLayoutHeight: 1080
+  DocumentLayoutOrientation: "'portrait'"
+  DocumentLayoutWidth: 1920
+  EnableLogLevel: "'Information'"
+  Name: "AddManufacturingRequestApp"
+  SizeBreakpoints:
+    - 600
+    - 900
+    - 1200
+  
+  Properties:
+    BackgroundImage: =
+    CacheDataSourcesOnApp: =true
+    ConfirmExit: =false
+    EnableLongLivedSessions: =false
+    ExplicitColumnSelection: =false
+    ExtendedSplashScreenImage: =
+    LoadDataSourcesOnAppStartup: =true
+    ManuallyEnableScrolling: =false
+    MaxAppSizeInMB: =10
+    Name: ="Additive Manufacturing Request App"
+    ShowLiveReload: =false
+    SizeBreakpoints: =[600, 900, 1200]
+    TabIndex: =
+
+  # Global theme variables for consistent styling
+  OnStart: |
+    // Initialize global theme variables
+    Set(varTheme, {
+        primaryColor: RGBA(0, 120, 212, 1),           // Microsoft Blue
+        secondaryColor: RGBA(107, 114, 126, 1),       // Gray
+        accentColor: RGBA(45, 156, 219, 1),           // Light Blue
+        backgroundColor: RGBA(255, 255, 255, 1),      // White
+        surfaceColor: RGBA(250, 249, 249, 1),         // Light Gray
+        textPrimaryColor: RGBA(50, 49, 48, 1),        // Dark Gray
+        textSecondaryColor: RGBA(96, 94, 92, 1),      // Medium Gray
+        successColor: RGBA(16, 124, 16, 1),           // Green
+        warningColor: RGBA(255, 140, 0, 1),           // Orange
+        errorColor: RGBA(164, 38, 44, 1),             // Red
+        borderColor: RGBA(200, 198, 196, 1),          // Light Border Gray
+        shadowColor: RGBA(0, 0, 0, 0.1)               // Light Shadow
+    });
+    
+    // Initialize current user information
+    Set(varCurrentUser, {
+        displayName: User().FullName,
+        email: User().Email,
+        department: "Engineering", // Would be populated from AD in real implementation
+        employeeId: "EMP001"       // Would be populated from AD in real implementation
+    });
+    
+    // Initialize form state variables
+    Set(varFormMode, "New");
+    Set(varCurrentRequest, Blank());
+    Set(varIsSubmitting, false);
+    Set(varShowSuccessDialog, false);
+    Set(varShowErrorDialog, false);
+    Set(varErrorMessage, "");
+    
+    // Initialize request data collection
+    Set(colMyRequests, []);
+    
+    // Initialize lookup collections for dropdowns
+    Set(colMaterials, [
+        {ID: 1, Name: "PLA (Polylactic Acid)", Type: "Thermoplastic", Cost: 25, Description: "Biodegradable, easy to print, good for prototypes"},
+        {ID: 2, Name: "ABS (Acrylonitrile Butadiene Styrene)", Type: "Thermoplastic", Cost: 30, Description: "Durable, heat resistant, good mechanical properties"},
+        {ID: 3, Name: "PETG", Type: "Thermoplastic", Cost: 35, Description: "Chemical resistant, clear, food-safe option"},
+        {ID: 4, Name: "Nylon (PA12)", Type: "Thermoplastic", Cost: 65, Description: "High strength, wear resistant, industrial applications"},
+        {ID: 5, Name: "TPU (Thermoplastic Polyurethane)", Type: "Flexible", Cost: 55, Description: "Flexible, rubber-like properties"},
+        {ID: 6, Name: "Aluminum (AlSi10Mg)", Type: "Metal", Cost: 150, Description: "Lightweight metal, good strength-to-weight ratio"},
+        {ID: 7, Name: "Stainless Steel 316L", Type: "Metal", Cost: 200, Description: "Corrosion resistant, biocompatible"},
+        {ID: 8, Name: "Titanium (Ti64)", Type: "Metal", Cost: 500, Description: "Aerospace grade, excellent strength-to-weight"},
+        {ID: 9, Name: "Resin (Standard)", Type: "Photopolymer", Cost: 40, Description: "High detail, smooth surface finish"},
+        {ID: 10, Name: "Tough Resin", Type: "Photopolymer", Cost: 60, Description: "ABS-like properties, impact resistant"}
+    ]);
+    
+    Set(colPrintProcesses, [
+        {ID: 1, Name: "FDM/FFF (Fused Deposition Modeling)", MaxSize: "300x300x400mm", Resolution: "0.1-0.3mm", SuitableMaterials: "PLA, ABS, PETG, Nylon, TPU"},
+        {ID: 2, Name: "SLA (Stereolithography)", MaxSize: "200x200x250mm", Resolution: "0.025-0.1mm", SuitableMaterials: "Standard Resin, Tough Resin"},
+        {ID: 3, Name: "SLS (Selective Laser Sintering)", MaxSize: "300x300x300mm", Resolution: "0.1-0.15mm", SuitableMaterials: "Nylon PA12"},
+        {ID: 4, Name: "DMLS (Direct Metal Laser Sintering)", MaxSize: "250x250x325mm", Resolution: "0.02-0.05mm", SuitableMaterials: "Aluminum, Stainless Steel, Titanium"},
+        {ID: 5, Name: "MJF (Multi Jet Fusion)", MaxSize: "380x284x380mm", Resolution: "0.08mm", SuitableMaterials: "Nylon PA12"}
+    ]);
+    
+    Set(colPriorities, [
+        {ID: 1, Name: "Low", Days: 14, Description: "Standard processing time"},
+        {ID: 2, Name: "Normal", Days: 7, Description: "Expedited processing"},
+        {ID: 3, Name: "High", Days: 3, Description: "Rush order - additional fees may apply"},
+        {ID: 4, Name: "Critical", Days: 1, Description: "Emergency - requires manager approval"}
+    ]);
+    
+    Set(colRequestTypes, [
+        {ID: 1, Name: "Prototype", Description: "Proof of concept or design validation"},
+        {ID: 2, Name: "Functional Part", Description: "End-use production part"},
+        {ID: 3, Name: "Tooling/Jig", Description: "Manufacturing aids and fixtures"},
+        {ID: 4, Name: "Replacement Part", Description: "Replace broken or worn components"},
+        {ID: 5, Name: "Research/Testing", Description: "R&D projects and material testing"}
+    ]);
+    
+    // Navigation to main screen
+    Navigate(scrMain, ScreenTransition.Fade);

@@ -1,0 +1,452 @@
+scrMyRequests As screen:
+  LoadingSpinner: =false
+  LoadingSpinnerColor: =varTheme.primaryColor
+  OnVisible: |
+    // In a real implementation, this would load data from SharePoint/Dataverse
+    // For demo purposes, we'll use the local collection
+    Set(colFilteredRequests, colMyRequests);
+
+  # Main container for the entire screen
+  cntMainRequests As groupContainer:
+    DropShadow: =DropShadow.None
+    Fill: =varTheme.backgroundColor
+    Height: =Parent.Height
+    LayoutAlignItems: =LayoutAlignItems.Stretch
+    LayoutDirection: =LayoutDirection.Vertical
+    LayoutGap: =0
+    LayoutMode: =LayoutMode.Auto
+    PaddingBottom: =20
+    PaddingLeft: =20
+    PaddingRight: =20
+    PaddingTop: =20
+    Width: =Parent.Width
+    X: =0
+    Y: =0
+
+    # Header section with navigation
+    cntHeaderRequests As groupContainer:
+      DropShadow: =DropShadow.None
+      Fill: =varTheme.surfaceColor
+      Height: =80
+      LayoutAlignItems: =LayoutAlignItems.Center
+      LayoutDirection: =LayoutDirection.Horizontal
+      LayoutGap: =15
+      LayoutMode: =LayoutMode.Auto
+      PaddingBottom: =15
+      PaddingLeft: =20
+      PaddingRight: =20
+      PaddingTop: =15
+      Width: =Parent.Width - 40
+
+      # Back button
+      btnBack As button:
+        BorderColor: =varTheme.borderColor
+        Color: =varTheme.textPrimaryColor
+        Fill: =varTheme.surfaceColor
+        Font: =Font.'Segoe UI'
+        Height: =40
+        HoverBorderColor: =varTheme.primaryColor
+        HoverColor: =varTheme.primaryColor
+        HoverFill: =ColorFade(varTheme.primaryColor, 95%)
+        Icon: =Icon.ChevronLeft
+        OnSelect: =Navigate(scrMain, ScreenTransition.Cover, {Direction: ScreenTransitionDirection.Right})
+        PaddingLeft: =10
+        PaddingRight: =10
+        Size: =14
+        Text: ="Back"
+        Width: =80
+
+      # Title and subtitle
+      cntTitleInfoRequests As groupContainer:
+        DropShadow: =DropShadow.None
+        Fill: =RGBA(0,0,0,0)
+        Height: =50
+        LayoutDirection: =LayoutDirection.Vertical
+        LayoutGap: =2
+        LayoutMode: =LayoutMode.Auto
+        Width: =Parent.Width - 200
+
+        lblTitleRequests As label:
+          Color: =varTheme.textPrimaryColor
+          Font: =Font.'Segoe UI'
+          FontWeight: =FontWeight.Semibold
+          Height: =30
+          Size: =18
+          Text: ="My Requests"
+          Width: =Parent.Width
+
+        lblSubtitleRequests As label:
+          Color: =varTheme.textSecondaryColor
+          Font: =Font.'Segoe UI'
+          Height: =20
+          Size: =12
+          Text: ="Track your additive manufacturing requests"
+          Width: =Parent.Width
+
+      # New Request button
+      btnNewRequest As button:
+        BorderColor: =varTheme.primaryColor
+        Color: =White
+        Fill: =varTheme.primaryColor
+        Font: =Font.'Segoe UI'
+        FontWeight: =FontWeight.Semibold
+        Height: =40
+        HoverBorderColor: =ColorFade(varTheme.primaryColor, -20%)
+        HoverColor: =White
+        HoverFill: =ColorFade(varTheme.primaryColor, -20%)
+        Icon: =Icon.Add
+        OnSelect: =Navigate(scrMain, ScreenTransition.Cover, {Direction: ScreenTransitionDirection.Left})
+        PaddingLeft: =15
+        PaddingRight: =15
+        Size: =14
+        Text: ="New Request"
+        Width: =140
+
+    # Filter and search section
+    cntFilters As groupContainer:
+      DropShadow: =DropShadow.Light
+      Fill: =varTheme.surfaceColor
+      Height: =80
+      LayoutAlignItems: =LayoutAlignItems.Center
+      LayoutDirection: =LayoutDirection.Horizontal
+      LayoutGap: =15
+      LayoutMode: =LayoutMode.Auto
+      PaddingBottom: =15
+      PaddingLeft: =20
+      PaddingRight: =20
+      PaddingTop: =15
+      Width: =Parent.Width - 40
+
+      # Search box
+      txtSearch As text:
+        BorderColor: =varTheme.borderColor
+        Color: =varTheme.textPrimaryColor
+        Font: =Font.'Segoe UI'
+        Height: =40
+        HintText: ="Search requests by title or description..."
+        OnChange: =FilterRequests(Self.Text, ddStatusFilter.SelectedText.Value)
+        PaddingBottom: =8
+        PaddingLeft: =35
+        PaddingRight: =12
+        PaddingTop: =8
+        Size: =14
+        Width: =400
+
+      icnSearch As icon:
+        Color: =varTheme.textSecondaryColor
+        Height: =20
+        Icon: =Icon.Search
+        Width: =20
+        X: =txtSearch.X + 10
+        Y: =txtSearch.Y + 10
+
+      # Status filter
+      lblStatusFilter As label:
+        Color: =varTheme.textPrimaryColor
+        Font: =Font.'Segoe UI'
+        Height: =20
+        Size: =12
+        Text: ="Status:"
+        Width: =50
+
+      ddStatusFilter As dropdown:
+        BorderColor: =varTheme.borderColor
+        ChevronBackground: =varTheme.surfaceColor
+        ChevronFill: =varTheme.textSecondaryColor
+        Color: =varTheme.textPrimaryColor
+        Default: ="All"
+        DisplayFields: =["Value"]
+        Font: =Font.'Segoe UI'
+        Height: =40
+        Items: =[
+          {Value: "All"},
+          {Value: "Submitted"},
+          {Value: "In Review"},
+          {Value: "Approved"},
+          {Value: "In Production"},
+          {Value: "Completed"},
+          {Value: "Rejected"}
+        ]
+        OnChange: =FilterRequests(txtSearch.Text, Self.SelectedText.Value)
+        SearchFields: =["Value"]
+        SelectionColor: =varTheme.primaryColor
+        SelectionFill: =ColorFade(varTheme.primaryColor, 80%)
+        Size: =14
+        Width: =150
+
+    # Requests gallery
+    galRequests As gallery:
+      BorderColor: =varTheme.borderColor
+      Height: =Parent.Height - cntHeaderRequests.Height - cntFilters.Height - 60
+      Items: =colFilteredRequests
+      Layout: =Layout.Vertical
+      LoadingSpinner: =LoadingSpinner.Controls
+      LoadingSpinnerColor: =varTheme.primaryColor
+      ShowScrollbar: =true
+      TemplateFill: =varTheme.surfaceColor
+      TemplatePadding: =10
+      TemplateSize: =180
+      Width: =Parent.Width - 40
+
+      # Request card template
+      cntRequestCard As groupContainer:
+        DropShadow: =DropShadow.Light
+        Fill: =varTheme.surfaceColor
+        Height: =160
+        LayoutDirection: =LayoutDirection.Vertical
+        LayoutGap: =8
+        LayoutMode: =LayoutMode.Auto
+        OnSelect: =Set(varSelectedRequest, ThisItem); Navigate(scrRequestDetails, ScreenTransition.Cover)
+        PaddingBottom: =15
+        PaddingLeft: =15
+        PaddingRight: =15
+        PaddingTop: =15
+        Width: =Parent.TemplateWidth - 20
+
+        # Card header with title and status
+        cntCardHeader As groupContainer:
+          DropShadow: =DropShadow.None
+          Fill: =RGBA(0,0,0,0)
+          Height: =40
+          LayoutAlignItems: =LayoutAlignItems.Center
+          LayoutDirection: =LayoutDirection.Horizontal
+          LayoutGap: =10
+          LayoutMode: =LayoutMode.Auto
+          Width: =Parent.Width - 30
+
+          lblRequestTitle As label:
+            Color: =varTheme.textPrimaryColor
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Semibold
+            Height: =40
+            Size: =16
+            Text: =ThisItem.Title
+            Width: =Parent.Width - 120
+
+          cntStatus As groupContainer:
+            DropShadow: =DropShadow.None
+            Fill: =Switch(ThisItem.Status,
+              "Submitted", ColorFade(varTheme.accentColor, 80%),
+              "In Review", ColorFade(varTheme.warningColor, 80%),
+              "Approved", ColorFade(varTheme.successColor, 80%),
+              "In Production", ColorFade(varTheme.primaryColor, 80%),
+              "Completed", ColorFade(varTheme.successColor, 90%),
+              "Rejected", ColorFade(varTheme.errorColor, 80%),
+              ColorFade(varTheme.secondaryColor, 80%)
+            )
+            Height: =25
+            LayoutAlignItems: =LayoutAlignItems.Center
+            LayoutDirection: =LayoutDirection.Horizontal
+            LayoutJustifyContent: =LayoutJustifyContent.Center
+            LayoutMode: =LayoutMode.Auto
+            PaddingBottom: =4
+            PaddingLeft: =8
+            PaddingRight: =8
+            PaddingTop: =4
+            Width: =100
+
+            lblStatus As label:
+              Color: =Switch(ThisItem.Status,
+                "Submitted", varTheme.accentColor,
+                "In Review", varTheme.warningColor,
+                "Approved", varTheme.successColor,
+                "In Production", varTheme.primaryColor,
+                "Completed", varTheme.successColor,
+                "Rejected", varTheme.errorColor,
+                varTheme.secondaryColor
+              )
+              Font: =Font.'Segoe UI'
+              FontWeight: =FontWeight.Semibold
+              Height: =17
+              Size: =11
+              Text: =ThisItem.Status
+              Width: =Parent.Width - 16
+
+        # Request details
+        cntRequestDetails As groupContainer:
+          DropShadow: =DropShadow.None
+          Fill: =RGBA(0,0,0,0)
+          Height: =80
+          LayoutDirection: =LayoutDirection.Vertical
+          LayoutGap: =5
+          LayoutMode: =LayoutMode.Auto
+          Width: =Parent.Width - 30
+
+          lblDescription As label:
+            Color: =varTheme.textSecondaryColor
+            Font: =Font.'Segoe UI'
+            Height: =15
+            Size: =12
+            Text: =Left(ThisItem.Description, 80) & If(Len(ThisItem.Description) > 80, "...", "")
+            Width: =Parent.Width
+
+          # Request info row 1
+          cntRequestInfo1 As groupContainer:
+            DropShadow: =DropShadow.None
+            Fill: =RGBA(0,0,0,0)
+            Height: =15
+            LayoutDirection: =LayoutDirection.Horizontal
+            LayoutGap: =20
+            LayoutMode: =LayoutMode.Auto
+            Width: =Parent.Width
+
+            lblType As label:
+              Color: =varTheme.textSecondaryColor
+              Font: =Font.'Segoe UI'
+              Height: =15
+              Size: =11
+              Text: ="Type: " & ThisItem.RequestType
+              Width: =150
+
+            lblQuantity As label:
+              Color: =varTheme.textSecondaryColor
+              Font: =Font.'Segoe UI'
+              Height: =15
+              Size: =11
+              Text: ="Qty: " & ThisItem.Quantity
+              Width: =80
+
+            lblMaterial As label:
+              Color: =varTheme.textSecondaryColor
+              Font: =Font.'Segoe UI'
+              Height: =15
+              Size: =11
+              Text: ="Material: " & Left(ThisItem.Material, 15) & If(Len(ThisItem.Material) > 15, "...", "")
+              Width: =150
+
+          # Request info row 2
+          cntRequestInfo2 As groupContainer:
+            DropShadow: =DropShadow.None
+            Fill: =RGBA(0,0,0,0)
+            Height: =15
+            LayoutDirection: =LayoutDirection.Horizontal
+            LayoutGap: =20
+            LayoutMode: =LayoutMode.Auto
+            Width: =Parent.Width
+
+            lblSubmitted As label:
+              Color: =varTheme.textSecondaryColor
+              Font: =Font.'Segoe UI'
+              Height: =15
+              Size: =11
+              Text: ="Submitted: " & Text(ThisItem.SubmittedDate, "mm/dd/yyyy")
+              Width: =150
+
+            lblPriority As label:
+              Color: =varTheme.textSecondaryColor
+              Font: =Font.'Segoe UI'
+              Height: =15
+              Size: =11
+              Text: ="Priority: " & ThisItem.Priority
+              Width: =100
+
+            lblCost As label:
+              Color: =varTheme.textSecondaryColor
+              Font: =Font.'Segoe UI'
+              Height: =15
+              Size: =11
+              Text: ="Est. Cost: $" & Text(ThisItem.EstimatedCost, "0.00")
+              Width: =120
+
+        # Action buttons
+        cntCardActions As groupContainer:
+          DropShadow: =DropShadow.None
+          Fill: =RGBA(0,0,0,0)
+          Height: =25
+          LayoutAlignItems: =LayoutAlignItems.Center
+          LayoutDirection: =LayoutDirection.Horizontal
+          LayoutGap: =10
+          LayoutJustifyContent: =LayoutJustifyContent.End
+          LayoutMode: =LayoutMode.Auto
+          Width: =Parent.Width - 30
+
+          btnViewDetails As button:
+            BorderColor: =varTheme.primaryColor
+            Color: =varTheme.primaryColor
+            Fill: =RGBA(0,0,0,0)
+            Font: =Font.'Segoe UI'
+            Height: =25
+            HoverBorderColor: =varTheme.primaryColor
+            HoverColor: =White
+            HoverFill: =varTheme.primaryColor
+            OnSelect: =Set(varSelectedRequest, ThisItem); Navigate(scrRequestDetails, ScreenTransition.Cover)
+            PaddingLeft: =10
+            PaddingRight: =10
+            Size: =11
+            Text: ="View Details"
+            Width: =90
+
+    # Empty state when no requests
+    cntEmptyState As groupContainer:
+      DropShadow: =DropShadow.None
+      Fill: =RGBA(0,0,0,0)
+      Height: =200
+      LayoutAlignItems: =LayoutAlignItems.Center
+      LayoutDirection: =LayoutDirection.Vertical
+      LayoutGap: =15
+      LayoutJustifyContent: =LayoutJustifyContent.Center
+      LayoutMode: =LayoutMode.Auto
+      Visible: =CountRows(colFilteredRequests) = 0
+      Width: =Parent.Width - 40
+      Y: =cntHeaderRequests.Height + cntFilters.Height + 100
+
+      icnEmpty As icon:
+        Color: =varTheme.textSecondaryColor
+        Height: =60
+        Icon: =Icon.DocumentSearch
+        Width: =60
+
+      lblEmptyTitle As label:
+        Align: =Align.Center
+        Color: =varTheme.textPrimaryColor
+        Font: =Font.'Segoe UI'
+        FontWeight: =FontWeight.Semibold
+        Height: =25
+        Size: =16
+        Text: ="No Requests Found"
+        Width: =300
+
+      lblEmptyMessage As label:
+        Align: =Align.Center
+        Color: =varTheme.textSecondaryColor
+        Font: =Font.'Segoe UI'
+        Height: =40
+        Size: =12
+        Text: =If(IsBlank(txtSearch.Text) And ddStatusFilter.SelectedText.Value = "All",
+          "You haven't submitted any additive manufacturing requests yet.",
+          "No requests match your current search criteria."
+        )
+        Width: =400
+
+      btnCreateFirst As button:
+        BorderColor: =varTheme.primaryColor
+        Color: =White
+        Fill: =varTheme.primaryColor
+        Font: =Font.'Segoe UI'
+        FontWeight: =FontWeight.Semibold
+        Height: =40
+        HoverBorderColor: =ColorFade(varTheme.primaryColor, -20%)
+        HoverColor: =White
+        HoverFill: =ColorFade(varTheme.primaryColor, -20%)
+        Icon: =Icon.Add
+        OnSelect: =Navigate(scrMain, ScreenTransition.Cover, {Direction: ScreenTransitionDirection.Left})
+        PaddingLeft: =15
+        PaddingRight: =15
+        Size: =14
+        Text: ="Create Your First Request"
+        Visible: =IsBlank(txtSearch.Text) And ddStatusFilter.SelectedText.Value = "All"
+        Width: =200
+
+# Custom function for filtering requests
+FilterRequests: |
+  Set(colFilteredRequests, 
+    Filter(
+      colMyRequests,
+      (IsBlank(locSearchText) Or locSearchText in Title Or locSearchText in Description) And
+      (locStatusFilter = "All" Or Status = locStatusFilter)
+    )
+  );
+  UpdateContext({
+    locSearchText: locSearchTextParam,
+    locStatusFilter: locStatusFilterParam
+  })

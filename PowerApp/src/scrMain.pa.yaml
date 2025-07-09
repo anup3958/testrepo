@@ -1,0 +1,682 @@
+scrMain As screen:
+  LoadingSpinner: =false
+  LoadingSpinnerColor: =varTheme.primaryColor
+  OnVisible: |
+    // Reset form when screen becomes visible
+    If(varFormMode = "New",
+        UpdateContext({
+            locRequestTitle: "",
+            locRequestType: Blank(),
+            locDescription: "",
+            locBusinessJustification: "",
+            locQuantity: 1,
+            locDimensions: "",
+            locMaterial: Blank(),
+            locPrintProcess: Blank(),
+            locPriority: LookUp(colPriorities, Name = "Normal"),
+            locSpecialInstructions: "",
+            locEstimatedVolume: "",
+            locTargetDeliveryDate: DateAdd(Today(), 7),
+            locAttachments: [],
+            locFormValid: false,
+            locEstimatedCost: 0
+        })
+    );
+
+  # Main container for the entire screen
+  cntMain As groupContainer:
+    DropShadow: =DropShadow.None
+    Fill: =varTheme.backgroundColor
+    Height: =Parent.Height
+    LayoutAlignItems: =LayoutAlignItems.Stretch
+    LayoutDirection: =LayoutDirection.Vertical
+    LayoutGap: =0
+    LayoutMode: =LayoutMode.Auto
+    PaddingBottom: =20
+    PaddingLeft: =20
+    PaddingRight: =20
+    PaddingTop: =20
+    Width: =Parent.Width
+    X: =0
+    Y: =0
+
+    # Header section
+    cntHeader As groupContainer:
+      DropShadow: =DropShadow.None
+      Fill: =varTheme.surfaceColor
+      Height: =80
+      LayoutAlignItems: =LayoutAlignItems.Center
+      LayoutDirection: =LayoutDirection.Horizontal
+      LayoutGap: =15
+      LayoutMode: =LayoutMode.Auto
+      PaddingBottom: =15
+      PaddingLeft: =20
+      PaddingRight: =20
+      PaddingTop: =15
+      Width: =Parent.Width - 40
+
+      # App icon
+      icnApp As icon:
+        Color: =varTheme.primaryColor
+        Height: =50
+        Icon: =Icon.Robot
+        Width: =50
+
+      # Title and subtitle
+      cntTitleInfo As groupContainer:
+        DropShadow: =DropShadow.None
+        Fill: =RGBA(0,0,0,0)
+        Height: =50
+        LayoutDirection: =LayoutDirection.Vertical
+        LayoutGap: =2
+        LayoutMode: =LayoutMode.Auto
+        Width: =Parent.Width - 150
+
+        lblTitle As label:
+          Color: =varTheme.textPrimaryColor
+          Font: =Font.'Segoe UI'
+          FontWeight: =FontWeight.Semibold
+          Height: =30
+          Size: =18
+          Text: ="Additive Manufacturing Request"
+          Width: =Parent.Width
+
+        lblSubtitle As label:
+          Color: =varTheme.textSecondaryColor
+          Font: =Font.'Segoe UI'
+          Height: =20
+          Size: =12
+          Text: ="Submit requests for 3D printed parts and components"
+          Width: =Parent.Width
+
+      # User info
+      lblUserInfo As label:
+        Align: =Align.Right
+        Color: =varTheme.textSecondaryColor
+        Font: =Font.'Segoe UI'
+        Height: =50
+        Size: =11
+        Text: ="Welcome, " & varCurrentUser.displayName
+        Width: =200
+
+    # Main form container with scroll capability
+    scrForm As scrollableScreen:
+      Height: =Parent.Height - cntHeader.Height - 40
+      Width: =Parent.Width - 40
+
+      # Form container
+      cntForm As groupContainer:
+        DropShadow: =DropShadow.None
+        Fill: =RGBA(0,0,0,0)
+        Height: =1200  // Fixed height to ensure scrolling works
+        LayoutDirection: =LayoutDirection.Vertical
+        LayoutGap: =20
+        LayoutMode: =LayoutMode.Auto
+        PaddingBottom: =20
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Width: =Parent.Width - 20
+
+        # Request Information Section
+        cntRequestInfo As groupContainer:
+          DropShadow: =DropShadow.Light
+          Fill: =varTheme.surfaceColor
+          Height: =380
+          LayoutDirection: =LayoutDirection.Vertical
+          LayoutGap: =15
+          LayoutMode: =LayoutMode.Auto
+          PaddingBottom: =20
+          PaddingLeft: =20
+          PaddingRight: =20
+          PaddingTop: =20
+          Width: =Parent.Width
+
+          lblSectionTitle1 As label:
+            Color: =varTheme.textPrimaryColor
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Semibold
+            Height: =25
+            Size: =16
+            Text: ="Request Information"
+            Width: =Parent.Width - 40
+
+          # Request Title
+          lblRequestTitle As label:
+            Color: =varTheme.textPrimaryColor
+            Font: =Font.'Segoe UI'
+            Height: =20
+            Size: =12
+            Text: ="Request Title *"
+            Width: =Parent.Width - 40
+
+          txtRequestTitle As text:
+            BorderColor: =If(IsBlank(locRequestTitle) And locFormValid, varTheme.errorColor, varTheme.borderColor)
+            Color: =varTheme.textPrimaryColor
+            Default: =locRequestTitle
+            Font: =Font.'Segoe UI'
+            Height: =40
+            HintText: ="Enter a descriptive title for your request"
+            OnChange: =UpdateContext({locRequestTitle: Self.Text}); UpdateContext({locFormValid: ValidateForm()})
+            PaddingBottom: =8
+            PaddingLeft: =12
+            PaddingRight: =12
+            PaddingTop: =8
+            Size: =14
+            Width: =Parent.Width - 40
+
+          # Request Type
+          lblRequestType As label:
+            Color: =varTheme.textPrimaryColor
+            Font: =Font.'Segoe UI'
+            Height: =20
+            Size: =12
+            Text: ="Request Type *"
+            Width: =Parent.Width - 40
+
+          ddRequestType As dropdown:
+            BorderColor: =If(IsBlank(locRequestType) And locFormValid, varTheme.errorColor, varTheme.borderColor)
+            ChevronBackground: =varTheme.surfaceColor
+            ChevronFill: =varTheme.textSecondaryColor
+            Color: =varTheme.textPrimaryColor
+            DisplayFields: =["Name"]
+            Font: =Font.'Segoe UI'
+            Height: =40
+            HintText: ="Select request type"
+            Items: =colRequestTypes
+            OnChange: =UpdateContext({locRequestType: Self.Selected}); UpdateContext({locFormValid: ValidateForm()})
+            SearchFields: =["Name", "Description"]
+            SelectionColor: =varTheme.primaryColor
+            SelectionFill: =ColorFade(varTheme.primaryColor, 80%)
+            Size: =14
+            Width: =Parent.Width - 40
+
+          # Description
+          lblDescription As label:
+            Color: =varTheme.textPrimaryColor
+            Font: =Font.'Segoe UI'
+            Height: =20
+            Size: =12
+            Text: ="Description *"
+            Width: =Parent.Width - 40
+
+          txtDescription As text:
+            BorderColor: =If(IsBlank(locDescription) And locFormValid, varTheme.errorColor, varTheme.borderColor)
+            Color: =varTheme.textPrimaryColor
+            Default: =locDescription
+            Font: =Font.'Segoe UI'
+            Height: =80
+            HintText: ="Describe the part/component and its intended use"
+            Mode: =TextMode.MultiLine
+            OnChange: =UpdateContext({locDescription: Self.Text}); UpdateContext({locFormValid: ValidateForm()})
+            PaddingBottom: =8
+            PaddingLeft: =12
+            PaddingRight: =12
+            PaddingTop: =8
+            Size: =14
+            Width: =Parent.Width - 40
+
+          # Business Justification
+          lblBusinessJustification As label:
+            Color: =varTheme.textPrimaryColor
+            Font: =Font.'Segoe UI'
+            Height: =20
+            Size: =12
+            Text: ="Business Justification *"
+            Width: =Parent.Width - 40
+
+          txtBusinessJustification As text:
+            BorderColor: =If(IsBlank(locBusinessJustification) And locFormValid, varTheme.errorColor, varTheme.borderColor)
+            Color: =varTheme.textPrimaryColor
+            Default: =locBusinessJustification
+            Font: =Font.'Segoe UI'
+            Height: =60
+            HintText: ="Explain why this request is necessary for your project"
+            Mode: =TextMode.MultiLine
+            OnChange: =UpdateContext({locBusinessJustification: Self.Text}); UpdateContext({locFormValid: ValidateForm()})
+            PaddingBottom: =8
+            PaddingLeft: =12
+            PaddingRight: =12
+            PaddingTop: =8
+            Size: =14
+            Width: =Parent.Width - 40
+
+        # Technical Specifications Section
+        cntTechnicalSpecs As groupContainer:
+          DropShadow: =DropShadow.Light
+          Fill: =varTheme.surfaceColor
+          Height: =420
+          LayoutDirection: =LayoutDirection.Vertical
+          LayoutGap: =15
+          LayoutMode: =LayoutMode.Auto
+          PaddingBottom: =20
+          PaddingLeft: =20
+          PaddingRight: =20
+          PaddingTop: =20
+          Width: =Parent.Width
+
+          lblSectionTitle2 As label:
+            Color: =varTheme.textPrimaryColor
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Semibold
+            Height: =25
+            Size: =16
+            Text: ="Technical Specifications"
+            Width: =Parent.Width - 40
+
+          # Quantity and Dimensions Row
+          cntQuantityDimensions As groupContainer:
+            DropShadow: =DropShadow.None
+            Fill: =RGBA(0,0,0,0)
+            Height: =80
+            LayoutDirection: =LayoutDirection.Horizontal
+            LayoutGap: =20
+            LayoutMode: =LayoutMode.Auto
+            Width: =Parent.Width - 40
+
+            # Quantity
+            cntQuantity As groupContainer:
+              DropShadow: =DropShadow.None
+              Fill: =RGBA(0,0,0,0)
+              Height: =80
+              LayoutDirection: =LayoutDirection.Vertical
+              LayoutGap: =5
+              LayoutMode: =LayoutMode.Auto
+              Width: =150
+
+              lblQuantity As label:
+                Color: =varTheme.textPrimaryColor
+                Font: =Font.'Segoe UI'
+                Height: =20
+                Size: =12
+                Text: ="Quantity *"
+                Width: =Parent.Width
+
+              txtQuantity As text:
+                BorderColor: =If(Value(locQuantity) <= 0 And locFormValid, varTheme.errorColor, varTheme.borderColor)
+                Color: =varTheme.textPrimaryColor
+                Default: =Text(locQuantity)
+                Font: =Font.'Segoe UI'
+                Format: =TextFormat.Number
+                Height: =40
+                HintText: ="1"
+                OnChange: =UpdateContext({locQuantity: Value(Self.Text)}); UpdateContext({locFormValid: ValidateForm()})
+                PaddingBottom: =8
+                PaddingLeft: =12
+                PaddingRight: =12
+                PaddingTop: =8
+                Size: =14
+                Width: =Parent.Width
+
+            # Dimensions
+            cntDimensions As groupContainer:
+              DropShadow: =DropShadow.None
+              Fill: =RGBA(0,0,0,0)
+              Height: =80
+              LayoutDirection: =LayoutDirection.Vertical
+              LayoutGap: =5
+              LayoutMode: =LayoutMode.Auto
+              Width: =Parent.Width - 170
+
+              lblDimensions As label:
+                Color: =varTheme.textPrimaryColor
+                Font: =Font.'Segoe UI'
+                Height: =20
+                Size: =12
+                Text: ="Approximate Dimensions (L x W x H)"
+                Width: =Parent.Width
+
+              txtDimensions As text:
+                BorderColor: =varTheme.borderColor
+                Color: =varTheme.textPrimaryColor
+                Default: =locDimensions
+                Font: =Font.'Segoe UI'
+                Height: =40
+                HintText: ="e.g., 100mm x 50mm x 25mm"
+                OnChange: =UpdateContext({locDimensions: Self.Text})
+                PaddingBottom: =8
+                PaddingLeft: =12
+                PaddingRight: =12
+                PaddingTop: =8
+                Size: =14
+                Width: =Parent.Width
+
+          # Material Selection
+          lblMaterial As label:
+            Color: =varTheme.textPrimaryColor
+            Font: =Font.'Segoe UI'
+            Height: =20
+            Size: =12
+            Text: ="Material *"
+            Width: =Parent.Width - 40
+
+          ddMaterial As dropdown:
+            BorderColor: =If(IsBlank(locMaterial) And locFormValid, varTheme.errorColor, varTheme.borderColor)
+            ChevronBackground: =varTheme.surfaceColor
+            ChevronFill: =varTheme.textSecondaryColor
+            Color: =varTheme.textPrimaryColor
+            DisplayFields: =["Name"]
+            Font: =Font.'Segoe UI'
+            Height: =40
+            HintText: ="Select material"
+            Items: =colMaterials
+            OnChange: =UpdateContext({locMaterial: Self.Selected}); UpdateContext({locFormValid: ValidateForm()}); UpdateContext({locEstimatedCost: CalculateEstimatedCost()})
+            SearchFields: =["Name", "Type", "Description"]
+            SelectionColor: =varTheme.primaryColor
+            SelectionFill: =ColorFade(varTheme.primaryColor, 80%)
+            Size: =14
+            Width: =Parent.Width - 40
+
+          # Material Info
+          lblMaterialInfo As label:
+            Color: =varTheme.textSecondaryColor
+            Font: =Font.'Segoe UI'
+            Height: =If(IsBlank(locMaterial), 0, 30)
+            Size: =11
+            Text: =If(IsBlank(locMaterial), "", locMaterial.Type & " - " & locMaterial.Description)
+            Visible: =!IsBlank(locMaterial)
+            Width: =Parent.Width - 40
+
+          # Print Process
+          lblPrintProcess As label:
+            Color: =varTheme.textPrimaryColor
+            Font: =Font.'Segoe UI'
+            Height: =20
+            Size: =12
+            Text: ="Print Process *"
+            Width: =Parent.Width - 40
+
+          ddPrintProcess As dropdown:
+            BorderColor: =If(IsBlank(locPrintProcess) And locFormValid, varTheme.errorColor, varTheme.borderColor)
+            ChevronBackground: =varTheme.surfaceColor
+            ChevronFill: =varTheme.textSecondaryColor
+            Color: =varTheme.textPrimaryColor
+            DisplayFields: =["Name"]
+            Font: =Font.'Segoe UI'
+            Height: =40
+            HintText: ="Select print process"
+            Items: =Filter(colPrintProcesses, locMaterial.Name in Split(SuitableMaterials, ", "))
+            OnChange: =UpdateContext({locPrintProcess: Self.Selected}); UpdateContext({locFormValid: ValidateForm()})
+            SearchFields: =["Name", "SuitableMaterials"]
+            SelectionColor: =varTheme.primaryColor
+            SelectionFill: =ColorFade(varTheme.primaryColor, 80%)
+            Size: =14
+            Width: =Parent.Width - 40
+
+          # Process Info
+          lblProcessInfo As label:
+            Color: =varTheme.textSecondaryColor
+            Font: =Font.'Segoe UI'
+            Height: =If(IsBlank(locPrintProcess), 0, 30)
+            Size: =11
+            Text: =If(IsBlank(locPrintProcess), "", "Max Size: " & locPrintProcess.MaxSize & " | Resolution: " & locPrintProcess.Resolution)
+            Visible: =!IsBlank(locPrintProcess)
+            Width: =Parent.Width - 40
+
+        # Priority and Timeline Section
+        cntPriorityTimeline As groupContainer:
+          DropShadow: =DropShadow.Light
+          Fill: =varTheme.surfaceColor
+          Height: =280
+          LayoutDirection: =LayoutDirection.Vertical
+          LayoutGap: =15
+          LayoutMode: =LayoutMode.Auto
+          PaddingBottom: =20
+          PaddingLeft: =20
+          PaddingRight: =20
+          PaddingTop: =20
+          Width: =Parent.Width
+
+          lblSectionTitle3 As label:
+            Color: =varTheme.textPrimaryColor
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Semibold
+            Height: =25
+            Size: =16
+            Text: ="Priority & Timeline"
+            Width: =Parent.Width - 40
+
+          # Priority Selection
+          lblPriority As label:
+            Color: =varTheme.textPrimaryColor
+            Font: =Font.'Segoe UI'
+            Height: =20
+            Size: =12
+            Text: ="Priority Level *"
+            Width: =Parent.Width - 40
+
+          ddPriority As dropdown:
+            BorderColor: =varTheme.borderColor
+            ChevronBackground: =varTheme.surfaceColor
+            ChevronFill: =varTheme.textSecondaryColor
+            Color: =varTheme.textPrimaryColor
+            Default: =LookUp(colPriorities, Name = "Normal")
+            DisplayFields: =["Name"]
+            Font: =Font.'Segoe UI'
+            Height: =40
+            Items: =colPriorities
+            OnChange: =UpdateContext({locPriority: Self.Selected})
+            SearchFields: =["Name", "Description"]
+            SelectionColor: =varTheme.primaryColor
+            SelectionFill: =ColorFade(varTheme.primaryColor, 80%)
+            Size: =14
+            Width: =Parent.Width - 40
+
+          # Priority Info
+          lblPriorityInfo As label:
+            Color: =varTheme.textSecondaryColor
+            Font: =Font.'Segoe UI'
+            Height: =30
+            Size: =11
+            Text: =If(IsBlank(locPriority), "", "Estimated completion: " & Text(DateAdd(Today(), locPriority.Days), "mm/dd/yyyy") & " (" & locPriority.Description & ")")
+            Width: =Parent.Width - 40
+
+          # Target Delivery Date
+          lblTargetDate As label:
+            Color: =varTheme.textPrimaryColor
+            Font: =Font.'Segoe UI'
+            Height: =20
+            Size: =12
+            Text: ="Target Delivery Date"
+            Width: =Parent.Width - 40
+
+          dpTargetDate As datePicker:
+            BorderColor: =varTheme.borderColor
+            Color: =varTheme.textPrimaryColor
+            DateTimeZone: =DateTimeZone.Local
+            Default: =locTargetDeliveryDate
+            Font: =Font.'Segoe UI'
+            Format: =DateTimeFormat.ShortDate
+            Height: =40
+            OnChange: =UpdateContext({locTargetDeliveryDate: Self.SelectedDate})
+            Size: =14
+            StartOfWeek: =StartOfWeek.Sunday
+            Width: =Parent.Width - 40
+
+          # Special Instructions
+          lblSpecialInstructions As label:
+            Color: =varTheme.textPrimaryColor
+            Font: =Font.'Segoe UI'
+            Height: =20
+            Size: =12
+            Text: ="Special Instructions"
+            Width: =Parent.Width - 40
+
+          txtSpecialInstructions As text:
+            BorderColor: =varTheme.borderColor
+            Color: =varTheme.textPrimaryColor
+            Default: =locSpecialInstructions
+            Font: =Font.'Segoe UI'
+            Height: =60
+            HintText: ="Any special requirements, surface finish, assembly notes, etc."
+            Mode: =TextMode.MultiLine
+            OnChange: =UpdateContext({locSpecialInstructions: Self.Text})
+            PaddingBottom: =8
+            PaddingLeft: =12
+            PaddingRight: =12
+            PaddingTop: =8
+            Size: =14
+            Width: =Parent.Width - 40
+
+        # Cost Estimation Section
+        cntCostEstimation As groupContainer:
+          DropShadow: =DropShadow.Light
+          Fill: =varTheme.surfaceColor
+          Height: =120
+          LayoutDirection: =LayoutDirection.Vertical
+          LayoutGap: =15
+          LayoutMode: =LayoutMode.Auto
+          PaddingBottom: =20
+          PaddingLeft: =20
+          PaddingRight: =20
+          PaddingTop: =20
+          Width: =Parent.Width
+
+          lblSectionTitle4 As label:
+            Color: =varTheme.textPrimaryColor
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Semibold
+            Height: =25
+            Size: =16
+            Text: ="Cost Estimation"
+            Width: =Parent.Width - 40
+
+          cntCostInfo As groupContainer:
+            DropShadow: =DropShadow.None
+            Fill: =ColorFade(varTheme.accentColor, 95%)
+            Height: =60
+            LayoutAlignItems: =LayoutAlignItems.Center
+            LayoutDirection: =LayoutDirection.Horizontal
+            LayoutGap: =15
+            LayoutMode: =LayoutMode.Auto
+            PaddingBottom: =15
+            PaddingLeft: =15
+            PaddingRight: =15
+            PaddingTop: =15
+            Width: =Parent.Width - 40
+
+            icnCost As icon:
+              Color: =varTheme.accentColor
+              Height: =30
+              Icon: =Icon.Money
+              Width: =30
+
+            cntCostText As groupContainer:
+              DropShadow: =DropShadow.None
+              Fill: =RGBA(0,0,0,0)
+              Height: =30
+              LayoutDirection: =LayoutDirection.Vertical
+              LayoutGap: =2
+              LayoutMode: =LayoutMode.Auto
+              Width: =Parent.Width - 85
+
+              lblEstimatedCost As label:
+                Color: =varTheme.textPrimaryColor
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =18
+                Size: =14
+                Text: ="Estimated Cost: $" & Text(locEstimatedCost, "0.00")
+                Width: =Parent.Width
+
+              lblCostNote As label:
+                Color: =varTheme.textSecondaryColor
+                Font: =Font.'Segoe UI'
+                Height: =12
+                Size: =10
+                Text: ="This is a rough estimate. Final cost may vary based on complexity and processing time."
+                Width: =Parent.Width
+
+  # Submit button
+  btnSubmit As button:
+    BorderColor: =varTheme.primaryColor
+    Color: =White
+    DisplayMode: =If(ValidateForm() And !varIsSubmitting, DisplayMode.Edit, DisplayMode.Disabled)
+    Fill: =If(Self.DisplayMode = DisplayMode.Disabled, varTheme.secondaryColor, varTheme.primaryColor)
+    Font: =Font.'Segoe UI'
+    FontWeight: =FontWeight.Semibold
+    Height: =50
+    HoverBorderColor: =ColorFade(varTheme.primaryColor, -20%)
+    HoverColor: =White
+    HoverFill: =ColorFade(varTheme.primaryColor, -20%)
+    OnSelect: =SubmitRequest()
+    PressedBorderColor: =ColorFade(varTheme.primaryColor, -40%)
+    PressedColor: =White
+    PressedFill: =ColorFade(varTheme.primaryColor, -40%)
+    Size: =16
+    Text: =If(varIsSubmitting, "Submitting...", "Submit Request")
+    Width: =200
+    X: =(Parent.Width - Self.Width) / 2
+    Y: =Parent.Height - 70
+
+# Custom functions for form validation and cost calculation
+ValidateForm: |
+  !IsBlank(locRequestTitle) And
+  !IsBlank(locRequestType) And
+  !IsBlank(locDescription) And
+  !IsBlank(locBusinessJustification) And
+  !IsBlank(locMaterial) And
+  !IsBlank(locPrintProcess) And
+  Value(locQuantity) > 0
+
+CalculateEstimatedCost: |
+  If(IsBlank(locMaterial) Or IsBlank(locQuantity),
+      0,
+      locMaterial.Cost * locQuantity * 
+      Switch(locPriority.Name,
+          "High", 1.5,
+          "Critical", 2.0,
+          1.0
+      )
+  )
+
+SubmitRequest: |
+  Set(varIsSubmitting, true);
+  
+  // Create request object
+  Set(varNewRequest, {
+      ID: GUID(),
+      Title: locRequestTitle,
+      RequestType: locRequestType.Name,
+      Description: locDescription,
+      BusinessJustification: locBusinessJustification,
+      Quantity: locQuantity,
+      Dimensions: locDimensions,
+      Material: locMaterial.Name,
+      PrintProcess: locPrintProcess.Name,
+      Priority: locPriority.Name,
+      SpecialInstructions: locSpecialInstructions,
+      EstimatedCost: locEstimatedCost,
+      TargetDeliveryDate: locTargetDeliveryDate,
+      SubmittedBy: varCurrentUser.displayName,
+      SubmittedDate: Now(),
+      Status: "Submitted",
+      Department: varCurrentUser.department,
+      RequestorEmail: varCurrentUser.email
+  });
+  
+  // In a real implementation, this would save to SharePoint/Dataverse
+  // For now, we'll add to our local collection
+  Collect(colMyRequests, varNewRequest);
+  
+  Set(varIsSubmitting, false);
+  Set(varShowSuccessDialog, true);
+  
+  // Reset form after successful submission
+  UpdateContext({
+      locRequestTitle: "",
+      locRequestType: Blank(),
+      locDescription: "",
+      locBusinessJustification: "",
+      locQuantity: 1,
+      locDimensions: "",
+      locMaterial: Blank(),
+      locPrintProcess: Blank(),
+      locPriority: LookUp(colPriorities, Name = "Normal"),
+      locSpecialInstructions: "",
+      locEstimatedVolume: "",
+      locTargetDeliveryDate: DateAdd(Today(), 7),
+      locAttachments: [],
+      locFormValid: false,
+      locEstimatedCost: 0
+  });
